@@ -7,59 +7,53 @@
     <style>
         body { 
             margin: 0; 
-            background-color: #000022; /* Solid dark blue */
+            background-color: #000022; /* solid dark blue */
             overflow: hidden; 
-            position: relative; /* For absolute positioning of the button */
         }
         canvas { display: block; }
-        
-        /* Style for the Home Button */
-        .home-button {
+        #info {
             position: absolute;
             top: 20px;
             left: 20px;
-            padding: 10px 20px;
-            background-color: #ff6347;
             color: white;
-            font-size: 16px;
-            border: none;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
             border-radius: 5px;
-            cursor: pointer;
-            z-index: 1; /* Make sure the button stays on top */
-        }
-        .home-button:hover {
-            background-color: #ff4500;
+            display: none;
+            font-family: Arial, sans-serif;
         }
     </style>
 </head>
 <body>
-    <button class="home-button" onclick="goHome()">Home</button>
-
+    <div id="info"></div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three/examples/js/controls/OrbitControls.min.js"></script>
     <script>
-        // Initialize the scene
+        // setting up the scene, camera, and renderer
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        // Add camera controls
+        // adding camera controls for interaction
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
 
-        // Raycaster and mouse for hover detection
+        // setting up raycaster and mouse for hover detection
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
 
-        // Create a circular texture for stars
+        // info box to show constellation details on hover
+        const infoBox = document.getElementById("info");
+
+        // creating a circular texture for stars
         const starCanvas = document.createElement('canvas');
         starCanvas.width = 128;
         starCanvas.height = 128;
 
         const ctx = starCanvas.getContext('2d');
         const gradient = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
-        gradient.addColorStop(0, '#FFFF00'); // Bright yellow center
+        gradient.addColorStop(0, '#FFFF00'); // bright yellow center
         gradient.addColorStop(0.5, 'rgba(255, 255, 0, 0.6)');
         gradient.addColorStop(1, 'rgba(255, 255, 0, 0.1)');
 
@@ -70,158 +64,162 @@
 
         const starTexture = new THREE.CanvasTexture(starCanvas);
 
-        // Material for stars and lines
+        // material for stars and lines
         const starMaterial = new THREE.PointsMaterial({
             map: starTexture,
-            size: 1.5, // Larger size for stars
+            size: 1.5, // slightly larger size for stars
             transparent: true,
             blending: THREE.AdditiveBlending
         });
 
         const lineMaterial = new THREE.LineBasicMaterial({ color: 0x88CCFF });
-        const hoverLineMaterials = [
-            new THREE.LineBasicMaterial({ color: 0xFF0000 }), // Red
-            new THREE.LineBasicMaterial({ color: 0x00FF00 }), // Green
-            new THREE.LineBasicMaterial({ color: 0x0000FF }), // Blue
-            new THREE.LineBasicMaterial({ color: 0xFFFF00 }), // Yellow
-            new THREE.LineBasicMaterial({ color: 0xFF00FF }), // Magenta
-            new THREE.LineBasicMaterial({ color: 0x00FFFF }), // Cyan
-            new THREE.LineBasicMaterial({ color: 0xFFFFFF })  // White
-        ];
 
-        const hoverObjects = []; // Objects to detect hover
+        // hover objects will detect when a constellation is hovered
+        const hoverObjects = [];
 
-        // Define constellations
+        // defining constellations with their names, descriptions, and star positions
         const constellations = [
-            {
-                name: "Ursa Major",
-                stars: [
-                    new THREE.Vector3(-30, 50, -10),
-                    new THREE.Vector3(-20, 40, 0),
-                    new THREE.Vector3(-10, 30, 10),
-                    new THREE.Vector3(0, 20, 15),
-                    new THREE.Vector3(10, 20, 20),
-                    new THREE.Vector3(20, 30, 20),
-                    new THREE.Vector3(30, 40, 15)
-                ]
-            },
-            {
-                name: "Ursa Minor",
-                stars: [
-                    new THREE.Vector3(-10, 50, 30),
-                    new THREE.Vector3(-15, 40, 20),
-                    new THREE.Vector3(-20, 30, 15),
-                    new THREE.Vector3(-25, 20, 10),
-                    new THREE.Vector3(-30, 10, 5),
-                    new THREE.Vector3(-40, 0, 0),
-                    new THREE.Vector3(-50, -10, -5)
-                ]
-            },
-            {
-                name: "Orion",
-                stars: [
-                    new THREE.Vector3(0, 0, 0),
-                    new THREE.Vector3(10, -20, -10),
-                    new THREE.Vector3(-10, -10, -20),
-                    new THREE.Vector3(-20, -20, -10),
-                    new THREE.Vector3(-5, -15, -10),
-                    new THREE.Vector3(0, -15, -10),
-                    new THREE.Vector3(5, -15, -10)
-                ]
-            },
-            {
-                name: "Cassiopeia",
-                stars: [
-                    new THREE.Vector3(-40, 50, 20),
-                    new THREE.Vector3(-30, 40, 15),
-                    new THREE.Vector3(-20, 30, 10),
-                    new THREE.Vector3(-10, 20, 15),
-                    new THREE.Vector3(0, 30, 20)
-                ]
-            },
-            {
-                name: "Andromeda",
-                stars: [
-                    new THREE.Vector3(30, 60, -20),
-                    new THREE.Vector3(20, 50, -10),
-                    new THREE.Vector3(10, 40, 0),
-                    new THREE.Vector3(0, 30, 10)
-                ]
-            },
-            {
-                name: "Antlia",
-                stars: [
-                    new THREE.Vector3(-30, -30, -50),
-                    new THREE.Vector3(-20, -20, -40),
-                    new THREE.Vector3(-10, -10, -30)
-                ]
-            },
-            {
-                name: "Apus",
-                stars: [
-                    new THREE.Vector3(50, -50, 20),
-                    new THREE.Vector3(60, -60, 30),
-                    new THREE.Vector3(70, -70, 40)
-                ]
-            },
-            {
-                name: "Aquarius",
-                stars: [
-                    new THREE.Vector3(10, 60, -20),
-                    new THREE.Vector3(15, 50, -30),
-                    new THREE.Vector3(20, 40, -25),
-                    new THREE.Vector3(25, 30, -20),
-                    new THREE.Vector3(30, 20, -15),
-                    new THREE.Vector3(35, 10, -10)
-                ]
-            },
-            {
-                name: "Cancer",
-                stars: [
-                    new THREE.Vector3(-30, 40, 10),
-                    new THREE.Vector3(-25, 30, 5),
-                    new THREE.Vector3(-20, 20, 10),
-                    new THREE.Vector3(-15, 10, 15),
-                    new THREE.Vector3(-10, 20, 20)
-                ]
-            },
-            {
-                name: "Auriga",
-                stars: [
-                    new THREE.Vector3(0, 50, 30),
-                    new THREE.Vector3(10, 40, 35),
-                    new THREE.Vector3(20, 30, 30),
-                    new THREE.Vector3(30, 20, 25),
-                    new THREE.Vector3(40, 10, 20)
-                ]
-            },
-            {
-                name: "Draco",
-                stars: [
-                    new THREE.Vector3(-50, 60, -10),
-                    new THREE.Vector3(-40, 50, -5),
-                    new THREE.Vector3(-30, 40, 0),
-                    new THREE.Vector3(-20, 30, -5),
-                    new THREE.Vector3(-10, 20, -10),
-                    new THREE.Vector3(-5, 10, -15)
-                ]
-            },
-            {
-                name: "Hercules",
-                stars: [
-                    new THREE.Vector3(-20, -20, 40),
-                    new THREE.Vector3(-10, -10, 45),
-                    new THREE.Vector3(0, 0, 50),
-                    new THREE.Vector3(10, 10, 55),
-                    new THREE.Vector3(20, 20, 60),
-                    new THREE.Vector3(30, 30, 65)
-                ]
-            }
-        ];
+    {
+        name: "Ursa Major",
+        description: "The Great Bear, with the recognizable Big Dipper asterism forming its tail and part of its body.",
+        stars: [
+            new THREE.Vector3(-30, 50, -10), // Dubhe
+            new THREE.Vector3(-25, 45, -5),  // Merak
+            new THREE.Vector3(-20, 40, 0),   // Phecda
+            new THREE.Vector3(-10, 35, 5),   // Megrez (bend in the handle)
+            new THREE.Vector3(0, 40, 10),    // Alioth
+            new THREE.Vector3(10, 45, 15),   // Mizar
+            new THREE.Vector3(20, 50, 20)    // Alkaid (tip of the tail)
+        ]
+    },
+    {
+        name: "Ursa Minor",
+        description: "The Little Bear, including the Little Dipper asterism with Polaris at the end of the tail.",
+        stars: [
+            new THREE.Vector3(-10, 60, 30),  // Polaris (end of the tail)
+            new THREE.Vector3(-15, 55, 25), // Kochab
+            new THREE.Vector3(-20, 50, 20), // Pherkad
+            new THREE.Vector3(-25, 45, 15), // Yildun
+            new THREE.Vector3(-30, 40, 10), // Epsilon UMi
+            new THREE.Vector3(-35, 35, 5),  // Zeta UMi
+            new THREE.Vector3(-40, 30, 0)   // Eta UMi (start of the tail)
+        ]
+    },
+    {
+        name: "Orion",
+        description: "The Hunter, with Orion's Belt at the center and prominent stars forming his shoulders and legs.",
+        stars: [
+            new THREE.Vector3(-20, 10, 10),  // Betelgeuse (shoulder)
+            new THREE.Vector3(20, 0, -10),   // Bellatrix (shoulder)
+            new THREE.Vector3(-5, -5, 0),    // Mintaka (belt)
+            new THREE.Vector3(0, -10, -5),   // Alnilam (belt)
+            new THREE.Vector3(5, -15, -10),  // Alnitak (belt)
+            new THREE.Vector3(-20, -30, -15),// Saiph (leg)
+            new THREE.Vector3(20, -25, -20)  // Rigel (leg)
+        ]
+    },
+    {
+        name: "Cassiopeia",
+        description: "The Queen, depicted as a W or M shape in the sky.",
+        stars: [
+            new THREE.Vector3(-30, 50, 20),  // Schedar
+            new THREE.Vector3(-20, 40, 15),  // Caph
+            new THREE.Vector3(-10, 50, 10),  // Gamma Cas
+            new THREE.Vector3(0, 40, 15),    // Ruchbah
+            new THREE.Vector3(10, 50, 20)    // Segin
+        ]
+    },
+    {
+        name: "Andromeda",
+        description: "The Chained Maiden, with a long, slender shape extending from Pegasus.",
+        stars: [
+            new THREE.Vector3(30, 70, -20),  // Alpheratz (near Pegasus)
+            new THREE.Vector3(25, 65, -15),  // Mirach
+            new THREE.Vector3(20, 60, -10),  // Almach
+            new THREE.Vector3(15, 55, -5)    // Delta And
+        ]
+    },
+    {
+        name: "Antlia",
+        description: "The Air Pump, depicted as a simple outline of a pump.",
+        stars: [
+            new THREE.Vector3(-20, -30, -50),
+            new THREE.Vector3(-15, -25, -45),
+            new THREE.Vector3(-10, -20, -40)
+        ]
+    },
+    {
+        name: "Apus",
+        description: "The Bird of Paradise, faint stars forming the shape of a bird.",
+        stars: [
+            new THREE.Vector3(50, -50, 25),
+            new THREE.Vector3(55, -45, 20),
+            new THREE.Vector3(60, -40, 15)
+        ]
+    },
+    {
+        name: "Aquarius",
+        description: "The Water Bearer, with a stream of stars representing flowing water.",
+        stars: [
+            new THREE.Vector3(20, 60, -25),  // Head
+            new THREE.Vector3(25, 55, -20),  // Jar
+            new THREE.Vector3(30, 50, -15),  // Start of stream
+            new THREE.Vector3(35, 45, -10),  // Stream middle
+            new THREE.Vector3(40, 40, -5),   // Stream middle
+            new THREE.Vector3(45, 35, 0)     // Stream end
+        ]
+    },
+    {
+        name: "Cancer",
+        description: "The Crab, faint stars forming a symbolic outline of a crab.",
+        stars: [
+            new THREE.Vector3(-30, 40, 10),  // Left claw
+            new THREE.Vector3(-20, 35, 5),   // Left body
+            new THREE.Vector3(-10, 30, 10),  // Center
+            new THREE.Vector3(0, 35, 15),    // Right body
+            new THREE.Vector3(10, 40, 20)    // Right claw
+        ]
+    },
+    {
+        name: "Auriga",
+        description: "The Charioteer, holding reins and often accompanied by a goat.",
+        stars: [
+            new THREE.Vector3(10, 50, 40),   // Capella (brightest star)
+            new THREE.Vector3(15, 45, 35),   // Shoulder
+            new THREE.Vector3(20, 40, 30),   // Body
+            new THREE.Vector3(25, 35, 25),   // Arm
+            new THREE.Vector3(30, 30, 20)    // Reins
+        ]
+    },
+    {
+        name: "Draco",
+        description: "The Dragon, winding across the sky with a long, sinuous shape.",
+        stars: [
+            new THREE.Vector3(-50, 60, -15), // Head
+            new THREE.Vector3(-40, 55, -10), // Neck
+            new THREE.Vector3(-30, 50, -5),  // First curve
+            new THREE.Vector3(-20, 45, 0),   // Second curve
+            new THREE.Vector3(-10, 40, -10), // Tail start
+            new THREE.Vector3(-5, 35, -20)   // Tail end
+        ]
+    },
+    {
+        name: "Hercules",
+        description: "The Hero, kneeling with a club.",
+        stars: [
+            new THREE.Vector3(-20, -20, 50), // Head
+            new THREE.Vector3(-15, -15, 55), // Shoulder
+            new THREE.Vector3(0, 0, 60),     // Arm
+            new THREE.Vector3(15, 15, 65),   // Club
+            new THREE.Vector3(20, 20, 70),   // Leg
+            new THREE.Vector3(25, 25, 75)    // Foot
+        ]
+    }
+];
 
 
-        // Add constellations to the scene
-        constellations.forEach((constellation, index) => {
+        // adding constellations to the scene
+        constellations.forEach((constellation) => {
             const starCoords = [];
             let center = new THREE.Vector3(0, 0, 0);
 
@@ -232,37 +230,37 @@
 
             center.divideScalar(constellation.stars.length);
 
-            // Add stars
+            // adding stars
             const starGeometry = new THREE.BufferGeometry();
             starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starCoords, 3));
             const stars = new THREE.Points(starGeometry, starMaterial);
             scene.add(stars);
 
-            // Add lines
+            // adding lines
             const lineGeometry = new THREE.BufferGeometry().setFromPoints(constellation.stars);
             const line = new THREE.Line(lineGeometry, lineMaterial);
             scene.add(line);
 
-            // Add hover object
+            // adding hover object for detection
             const hoverSphere = new THREE.Mesh(
                 new THREE.SphereGeometry(5, 32, 32),
                 new THREE.MeshBasicMaterial({ visible: false })
             );
             hoverSphere.position.copy(center);
-            hoverSphere.userData = { constellation, line, index };
+            hoverSphere.userData = { name: constellation.name, description: constellation.description };
             scene.add(hoverSphere);
             hoverObjects.push(hoverSphere);
 
-            // Add name
+            // adding name label for each constellation
             const label = createTextSprite(constellation.name, center);
             scene.add(label);
         });
 
-        // Function to create a text label for the constellation
+        // helper function to create text labels
         function createTextSprite(text, position) {
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
-            context.font = '40px Arial'; // Kid-friendly font
+            context.font = '40px Arial';
             context.fillStyle = 'white';
             context.textAlign = 'center';
             context.fillText(text, canvas.width / 2, canvas.height / 2);
@@ -271,44 +269,42 @@
             const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
             const sprite = new THREE.Sprite(spriteMaterial);
 
-            sprite.scale.set(20, 10, 1); // Adjust size of the label
+            sprite.scale.set(20, 10, 1);
             sprite.position.copy(position);
             return sprite;
         }
 
-        // Detect mouse movement
+        // handle mouse movements for hover detection
         function onMouseMove(event) {
             mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
             mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-        }
 
-        window.addEventListener('mousemove', onMouseMove);
-
-        // Animate the scene
-        function animate() {
-            requestAnimationFrame(animate);
-
-            // Update raycaster
             raycaster.setFromCamera(mouse, camera);
-
-            // Check for intersections
             const intersects = raycaster.intersectObjects(hoverObjects);
-            hoverObjects.forEach(obj => {
-                obj.userData.line.material = lineMaterial; // Reset line material
-            });
 
             if (intersects.length > 0) {
                 const hovered = intersects[0].object;
-                const index = hovered.userData.index;
-                hovered.userData.line.material = hoverLineMaterials[index % hoverLineMaterials.length];
+                const { name, description } = hovered.userData;
+                infoBox.style.display = "block";
+                infoBox.style.left = `${event.clientX + 10}px`;
+                infoBox.style.top = `${event.clientY + 10}px`;
+                infoBox.innerText = `${name}: ${description}`;
+            } else {
+                infoBox.style.display = "none";
             }
+        }
 
+        window.addEventListener("mousemove", onMouseMove);
+
+        // animating the scene
+        function animate() {
+            requestAnimationFrame(animate);
             controls.update();
             renderer.render(scene, camera);
         }
 
-        // Handle window resize
-        window.addEventListener('resize', () => {
+        // adjusting canvas size on window resize
+        window.addEventListener("resize", () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
@@ -316,11 +312,6 @@
 
         camera.position.set(0, 0, 100);
         animate();
-
-        // Function to handle the "Home" button click
-        function goHome() {
-            window.location.href = 'index.html'; // Redirect to homepage (or any URL)
-        }
     </script>
 </body>
 </html>
