@@ -7,59 +7,53 @@
     <style>
         body { 
             margin: 0; 
-            background-color: #000022; /* Solid dark blue */
+            background-color: #000022; /* solid dark blue */
             overflow: hidden; 
-            position: relative; /* For absolute positioning of the button */
         }
         canvas { display: block; }
-        
-        /* Style for the Home Button */
-        .home-button {
+        #info {
             position: absolute;
             top: 20px;
             left: 20px;
-            padding: 10px 20px;
-            background-color: #ff6347;
             color: white;
-            font-size: 16px;
-            border: none;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
             border-radius: 5px;
-            cursor: pointer;
-            z-index: 1; /* Make sure the button stays on top */
-        }
-        .home-button:hover {
-            background-color: #ff4500;
+            display: none;
+            font-family: Arial, sans-serif;
         }
     </style>
 </head>
 <body>
-    <button class="home-button" onclick="goHome()">Home</button>
-
+    <div id="info"></div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three/examples/js/controls/OrbitControls.min.js"></script>
     <script>
-        // Initialize the scene
+        // setting up the scene, camera, and renderer
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        // Add camera controls
+        // adding camera controls for interaction
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
 
-        // Raycaster and mouse for hover detection
+        // setting up raycaster and mouse for hover detection
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
 
-        // Create a circular texture for stars
+        // info box to show constellation details on hover
+        const infoBox = document.getElementById("info");
+
+        // creating a circular texture for stars
         const starCanvas = document.createElement('canvas');
         starCanvas.width = 128;
         starCanvas.height = 128;
 
         const ctx = starCanvas.getContext('2d');
         const gradient = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
-        gradient.addColorStop(0, '#FFFF00'); // Bright yellow center
+        gradient.addColorStop(0, '#FFFF00'); // bright yellow center
         gradient.addColorStop(0.5, 'rgba(255, 255, 0, 0.6)');
         gradient.addColorStop(1, 'rgba(255, 255, 0, 0.1)');
 
@@ -70,28 +64,20 @@
 
         const starTexture = new THREE.CanvasTexture(starCanvas);
 
-        // Material for stars and lines
+        // material for stars and lines
         const starMaterial = new THREE.PointsMaterial({
             map: starTexture,
-            size: 1.5, // Larger size for stars
+            size: 1.5, // slightly larger size for stars
             transparent: true,
             blending: THREE.AdditiveBlending
         });
 
         const lineMaterial = new THREE.LineBasicMaterial({ color: 0x88CCFF });
-        const hoverLineMaterials = [
-            new THREE.LineBasicMaterial({ color: 0xFF0000 }), // Red
-            new THREE.LineBasicMaterial({ color: 0x00FF00 }), // Green
-            new THREE.LineBasicMaterial({ color: 0x0000FF }), // Blue
-            new THREE.LineBasicMaterial({ color: 0xFFFF00 }), // Yellow
-            new THREE.LineBasicMaterial({ color: 0xFF00FF }), // Magenta
-            new THREE.LineBasicMaterial({ color: 0x00FFFF }), // Cyan
-            new THREE.LineBasicMaterial({ color: 0xFFFFFF })  // White
-        ];
 
-        const hoverObjects = []; // Objects to detect hover
+        // hover objects will detect when a constellation is hovered
+        const hoverObjects = [];
 
-        // Define constellations
+        // defining constellations with their names, descriptions, and star positions
         const constellations = [
     {
         name: "Ursa Major",
@@ -232,9 +218,8 @@
 ];
 
 
-
-        // Add constellations to the scene
-        constellations.forEach((constellation, index) => {
+        // adding constellations to the scene
+        constellations.forEach((constellation) => {
             const starCoords = [];
             let center = new THREE.Vector3(0, 0, 0);
 
@@ -245,37 +230,37 @@
 
             center.divideScalar(constellation.stars.length);
 
-            // Add stars
+            // adding stars
             const starGeometry = new THREE.BufferGeometry();
             starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starCoords, 3));
             const stars = new THREE.Points(starGeometry, starMaterial);
             scene.add(stars);
 
-            // Add lines
+            // adding lines
             const lineGeometry = new THREE.BufferGeometry().setFromPoints(constellation.stars);
             const line = new THREE.Line(lineGeometry, lineMaterial);
             scene.add(line);
 
-            // Add hover object
+            // adding hover object for detection
             const hoverSphere = new THREE.Mesh(
                 new THREE.SphereGeometry(5, 32, 32),
                 new THREE.MeshBasicMaterial({ visible: false })
             );
             hoverSphere.position.copy(center);
-            hoverSphere.userData = { constellation, line, index };
+            hoverSphere.userData = { name: constellation.name, description: constellation.description };
             scene.add(hoverSphere);
             hoverObjects.push(hoverSphere);
 
-            // Add name
+            // adding name label for each constellation
             const label = createTextSprite(constellation.name, center);
             scene.add(label);
         });
 
-        // Function to create a text label for the constellation
+        // helper function to create text labels
         function createTextSprite(text, position) {
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
-            context.font = '40px Arial'; // Kid-friendly font
+            context.font = '40px Arial';
             context.fillStyle = 'white';
             context.textAlign = 'center';
             context.fillText(text, canvas.width / 2, canvas.height / 2);
@@ -284,44 +269,42 @@
             const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
             const sprite = new THREE.Sprite(spriteMaterial);
 
-            sprite.scale.set(20, 10, 1); // Adjust size of the label
+            sprite.scale.set(20, 10, 1);
             sprite.position.copy(position);
             return sprite;
         }
 
-        // Detect mouse movement
+        // handle mouse movements for hover detection
         function onMouseMove(event) {
             mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
             mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-        }
 
-        window.addEventListener('mousemove', onMouseMove);
-
-        // Animate the scene
-        function animate() {
-            requestAnimationFrame(animate);
-
-            // Update raycaster
             raycaster.setFromCamera(mouse, camera);
-
-            // Check for intersections
             const intersects = raycaster.intersectObjects(hoverObjects);
-            hoverObjects.forEach(obj => {
-                obj.userData.line.material = lineMaterial; // Reset line material
-            });
 
             if (intersects.length > 0) {
                 const hovered = intersects[0].object;
-                const index = hovered.userData.index;
-                hovered.userData.line.material = hoverLineMaterials[index % hoverLineMaterials.length];
+                const { name, description } = hovered.userData;
+                infoBox.style.display = "block";
+                infoBox.style.left = ${event.clientX + 10}px;
+                infoBox.style.top = ${event.clientY + 10}px;
+                infoBox.innerText = ${name}: ${description};
+            } else {
+                infoBox.style.display = "none";
             }
+        }
 
+        window.addEventListener("mousemove", onMouseMove);
+
+        // animating the scene
+        function animate() {
+            requestAnimationFrame(animate);
             controls.update();
             renderer.render(scene, camera);
         }
 
-        // Handle window resize
-        window.addEventListener('resize', () => {
+        // adjusting canvas size on window resize
+        window.addEventListener("resize", () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
@@ -329,11 +312,8 @@
 
         camera.position.set(0, 0, 100);
         animate();
-
-        // Function to handle the "Home" button click
-        function goHome() {
-            window.location.href = 'index.html'; // Redirect to homepage (or any URL)
-        }
     </script>
 </body>
 </html>
+
+
