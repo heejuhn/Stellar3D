@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StellAR - AR Constellation Tracker</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header id="hero">
+        <div class="stars"></div>
+        <img src="logo.png" alt="StellAR Logo" id="logo"> <!--yummy yummy logo-->
+        <p>Explore the constellations in 3D</p>
+        <a href="camera.html" id="to-camera" class="cta-button">To the stars!</a>
+    </header>
+
+    <audio id="background-music" src="music.mp3" loop></audio>
+
+    <script>
+        const starContainer = document.querySelector('.stars');
+        const starCount = 25; // idk maybe add more stars to look cool 
+
+        for (let i = 0; i < starCount; i++) {
+            const star = document.createElement('div');
+            star.style.top = `${Math.random() * -15}vh`; 
+            const randomLeft = Math.random() * 100; 
+            star.style.left = `${randomLeft}vw`;
+            star.style.animationDuration = `${Math.random() * 10 + 5}s`; 
+            star.style.animationDelay = `${Math.random() * 5}s`; 
+            if (Math.random() > 0.9) {
+                star.style.animation = 'falling-stars 5s linear infinite, glow 4s ease-in-out infinite';
+            }
+            starContainer.appendChild(star);
+        }
+
+        const audio = document.getElementById('background-music');
+        audio.volume = 0.5; 
+        audio.play().catch(error => console.error('Audio playback failed:', error));
+
+        const cameraLink = document.getElementById('to-camera');
+        cameraLink.addEventListener('click', () => {
+            localStorage.setItem('audio-playing', !audio.paused);
+            localStorage.setItem('audio-time', audio.currentTime);
+        });
+    </script>
+</body>
+</html>
