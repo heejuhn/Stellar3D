@@ -7,10 +7,29 @@
     <style>
         body { 
             margin: 0; 
-            background-color: #000022; /* solid dark blue */
+            background-color: #000022;
             overflow: hidden; 
         }
         canvas { display: block; }
+
+        .home-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 10px 20px;
+            background-color: #ff6347;
+            color: white;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 1; 
+        }
+        
+        .home-button:hover {
+            background-color: #ff4500;
+        }
+        
         #info {
             position: absolute;
             top: 20px;
@@ -25,6 +44,8 @@
     </style>
 </head>
 <body>
+    <button class="home-button" onclick="goHome()">Home</button>
+    
     <div id="info"></div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three/examples/js/controls/OrbitControls.min.js"></script>
